@@ -341,6 +341,53 @@ namespace lpp
         output << ")(__acc, __item); } return __acc; })()";
     }
 
+    void Transpiler::visit(IterateWhileExpr &node)
+    {
+        // start !! condition $ stepFn => IIFE that generates array
+        output << "([&]() { std::vector<decltype(";
+        node.start->accept(*this);
+        output << ")> __result; auto __current = ";
+        node.start->accept(*this);
+        output << "; while ((";
+        node.condition->accept(*this);
+        output << ")(__current)) { __result.push_back(__current); __current = (";
+        node.stepFn->accept(*this);
+        output << ")(__current); } return __result; })()";
+    }
+
+    void Transpiler::visit(AutoIterateExpr &node)
+    {
+        // start !!< limit or start !!> limit
+        output << "([&]() { std::vector<int> __result; int __current = ";
+        node.start->accept(*this);
+        output << "; int __limit = ";
+        node.limit->accept(*this);
+        output << "; ";
+        if (node.isIncrement)
+        {
+            output << "while (__current < __limit) { __result.push_back(__current); __current++; }";
+        }
+        else
+        {
+            output << "while (__current > __limit) { __result.push_back(__current); __current--; }";
+        }
+        output << " return __result; })()";
+    }
+
+    void Transpiler::visit(IterateStepExpr &node)
+    {
+        // start ~> stepFn !! condition
+        output << "([&]() { std::vector<decltype(";
+        node.start->accept(*this);
+        output << ")> __result; auto __current = ";
+        node.start->accept(*this);
+        output << "; while ((";
+        node.condition->accept(*this);
+        output << ")(__current)) { __result.push_back(__current); __current = (";
+        node.stepFn->accept(*this);
+        output << ")(__current); } return __result; })()";
+    }
+
     void Transpiler::visit(ArrayExpr &node)
     {
         // Check if contains spread elements

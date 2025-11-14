@@ -20,6 +20,9 @@ namespace lpp
     void MapExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void FilterExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void ReduceExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+    void IterateWhileExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+    void AutoIterateExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+    void IterateStepExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void ArrayExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void ListComprehension::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void SpreadExpr::accept(ASTVisitor &visitor) { visitor.visit(*this); }

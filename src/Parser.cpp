@@ -489,6 +489,43 @@ namespace lpp
     {
         auto expr = term();
 
+        // Iterate-while: start !! condition $ stepFn
+        if (match(TokenType::BANG_BANG))
+        {
+            auto condition = term();
+            if (match(TokenType::DOLLAR))
+            {
+                auto stepFn = term();
+                return std::make_unique<IterateWhileExpr>(std::move(expr), std::move(condition), std::move(stepFn));
+            }
+            // If no $, treat as error or just !!
+            error("Expected '$' after condition in iterate-while expression");
+        }
+
+        // Auto-iterate: start !!< limit or start !!> limit
+        if (match(TokenType::BANG_BANG_LESS))
+        {
+            auto limit = term();
+            return std::make_unique<AutoIterateExpr>(std::move(expr), std::move(limit), true);
+        }
+        if (match(TokenType::BANG_BANG_GREATER))
+        {
+            auto limit = term();
+            return std::make_unique<AutoIterateExpr>(std::move(expr), std::move(limit), false);
+        }
+
+        // Iterate-step: start ~> stepFn !! condition
+        if (match(TokenType::TILDE_GT))
+        {
+            auto stepFn = term();
+            if (match(TokenType::BANG_BANG))
+            {
+                auto condition = term();
+                return std::make_unique<IterateStepExpr>(std::move(expr), std::move(stepFn), std::move(condition));
+            }
+            error("Expected '!!' after step function in iterate-step expression");
+        }
+
         // Map operator: arr @ fn
         if (match(TokenType::AT))
         {

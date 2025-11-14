@@ -15,7 +15,8 @@
 ### Language Features
 - 🎯 **Modern Syntax** — Rust/JS-inspired (arrow functions, destructuring, spread)
 - 📦 **ES6+ Support** — Optional chaining (`?.`), nullish coalescing (`??`), template literals
-- ⚡ **Golf-Style Operators** — Symbolic syntax for functional programming (`~`, `@`, `?`, `\`)
+- ⚡ **Golf-Style Operators** — Symbolic functional programming (`~`, `@`, `?`, `\`)
+- 🔁 **Iterate-While** — Haskell-inspired sequence generation (`!!<`, `!!>`, `!! $`, `~>`)
 - 🔧 **Pattern Matching** — `match` expressions with guards
 - 🧩 **ADTs** — Algebraic data types and type unions
 - 🎨 **Higher-Order Functions** — Map, filter, compose, pipeline operator
@@ -133,6 +134,11 @@ let doubled = nums @ (x -> x * 2);    // map
 let evens = nums ? (x -> x % 2 == 0); // filter
 let sum = nums \ ((acc,x) -> acc+x);  // reduce
 
+// Iterate-while (Haskell-inspired sequence generation)
+let countdown = 10 !!> 0;                      // [10,9,8,7,6,5,4,3,2,1]
+let powers = 1 !! (x -> x < 100) $ (x -> x*2); // [1,2,4,8,16,32,64]
+let squares = 1 ~> (x -> x+1) !! (x -> x < 10) @ (x -> x*x); // [1,4,9,16,25,36,49,64,81]
+
 // Destructuring & spread
 let [a, b, ...rest] = array;
 let {x, y} = point;
@@ -197,6 +203,7 @@ Details in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **[Quick Start](docs/QUICKSTART.md)**
 - **[Language Specification](docs/FULL_SPEC.md)**
 - **[Golf-Style Operators](docs/GOLF_SYNTAX.md)** — Symbolic functional programming
+- **[Iterate-While Operators](docs/ITERATE_WHILE.md)** — Haskell-inspired sequence generation
 - **[Architecture Guide](docs/ARCHITECTURE.md)**
 - **[Static Analyzer Details](docs/STATIC_ANALYZER.md)**
 - **[ES6+ Features](docs/ES6_FEATURES.md)**

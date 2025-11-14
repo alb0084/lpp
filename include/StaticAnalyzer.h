@@ -154,6 +154,9 @@ namespace lpp
         void visit(MapExpr &node) override;
         void visit(FilterExpr &node) override;
         void visit(ReduceExpr &node) override;
+        void visit(IterateWhileExpr &node) override;
+        void visit(AutoIterateExpr &node) override;
+        void visit(IterateStepExpr &node) override;
         void visit(ArrayExpr &node) override;
         void visit(ListComprehension &node) override;
         void visit(SpreadExpr &node) override;

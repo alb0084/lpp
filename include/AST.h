@@ -142,6 +142,48 @@ namespace lpp
         void accept(ASTVisitor &visitor) override;
     };
 
+    // Iterate-while operator: start !! predicate $ stepFn
+    // Generates array by iterating while condition is true
+    class IterateWhileExpr : public Expression
+    {
+    public:
+        std::unique_ptr<Expression> start;
+        std::unique_ptr<Expression> condition;
+        std::unique_ptr<Expression> stepFn;
+
+        IterateWhileExpr(std::unique_ptr<Expression> s, std::unique_ptr<Expression> cond, std::unique_ptr<Expression> step)
+            : start(std::move(s)), condition(std::move(cond)), stepFn(std::move(step)) {}
+        void accept(ASTVisitor &visitor) override;
+    };
+
+    // Auto-iterate operators: start !!< limit or start !!> limit
+    // Auto-increment/decrement until limit is reached
+    class AutoIterateExpr : public Expression
+    {
+    public:
+        std::unique_ptr<Expression> start;
+        std::unique_ptr<Expression> limit;
+        bool isIncrement; // true for !!<, false for !!>
+
+        AutoIterateExpr(std::unique_ptr<Expression> s, std::unique_ptr<Expression> lim, bool inc)
+            : start(std::move(s)), limit(std::move(lim)), isIncrement(inc) {}
+        void accept(ASTVisitor &visitor) override;
+    };
+
+    // Iterate-step operator: start ~> stepFn !! condition
+    // Alternative syntax for iterate-while
+    class IterateStepExpr : public Expression
+    {
+    public:
+        std::unique_ptr<Expression> start;
+        std::unique_ptr<Expression> stepFn;
+        std::unique_ptr<Expression> condition;
+
+        IterateStepExpr(std::unique_ptr<Expression> s, std::unique_ptr<Expression> step, std::unique_ptr<Expression> cond)
+            : start(std::move(s)), stepFn(std::move(step)), condition(std::move(cond)) {}
+        void accept(ASTVisitor &visitor) override;
+    };
+
     class CallExpr : public Expression
     {
     public:
@@ -467,6 +509,9 @@ namespace lpp
         virtual void visit(MapExpr &node) = 0;
         virtual void visit(FilterExpr &node) = 0;
         virtual void visit(ReduceExpr &node) = 0;
+        virtual void visit(IterateWhileExpr &node) = 0;
+        virtual void visit(AutoIterateExpr &node) = 0;
+        virtual void visit(IterateStepExpr &node) = 0;
         virtual void visit(ArrayExpr &node) = 0;
         virtual void visit(ListComprehension &node) = 0;
         virtual void visit(SpreadExpr &node) = 0;
