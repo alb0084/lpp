@@ -130,14 +130,18 @@ namespace lpp
         COLON,
         ARROW, // ->
         DOT,
-        DOT_DOT,      // .. (range)
-        DOT_DOT_DOT,  // ... (spread/rest)
-        QUESTION,     // ? (ternary / optional chaining)
-        QUESTION_DOT, // ?.
-        DOLLAR,       // $ (else in ternary if)
-        PIPE_GT,      // |> (pipeline)
-        BACKTICK,     // ` (template strings)
-        AT,           // @ (decorators)
+        DOT_DOT,           // .. (range)
+        DOT_DOT_DOT,       // ... (spread/rest)
+        QUESTION,          // ? (ternary / optional chaining)
+        QUESTION_DOT,      // ?.
+        DOLLAR,            // $ (else in ternary if / step operator)
+        PIPE_GT,           // |> (pipeline)
+        BACKTICK,          // ` (template strings)
+        AT,                // @ (decorators / map operator)
+        TILDE_GT,          // ~> (iterate forward)
+        BANG_BANG,         // !! (iterate-while)
+        BANG_BANG_LESS,    // !!< (auto-increment until)
+        BANG_BANG_GREATER, // !!> (auto-decrement until)
 
         // Special
         END_OF_FILE,

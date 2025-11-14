@@ -133,6 +133,10 @@ namespace lpp
         {TokenType::PIPE_GT, "PIPE_GT"},
         {TokenType::BACKTICK, "BACKTICK"},
         {TokenType::AT, "AT"},
+        {TokenType::TILDE_GT, "TILDE_GT"},
+        {TokenType::BANG_BANG, "BANG_BANG"},
+        {TokenType::BANG_BANG_LESS, "BANG_BANG_LESS"},
+        {TokenType::BANG_BANG_GREATER, "BANG_BANG_GREATER"},
 
         // Special
         {TokenType::END_OF_FILE, "EOF"},

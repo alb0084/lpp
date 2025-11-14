@@ -257,6 +257,48 @@ namespace lpp
         }
     }
 
+    void BorrowChecker::visit(MapExpr &node)
+    {
+        node.iterable->accept(*this);
+        node.fn->accept(*this);
+    }
+
+    void BorrowChecker::visit(FilterExpr &node)
+    {
+        node.iterable->accept(*this);
+        node.predicate->accept(*this);
+    }
+
+    void BorrowChecker::visit(ReduceExpr &node)
+    {
+        node.iterable->accept(*this);
+        node.fn->accept(*this);
+        if (node.initial)
+        {
+            node.initial->accept(*this);
+        }
+    }
+
+    void BorrowChecker::visit(IterateWhileExpr &node)
+    {
+        node.start->accept(*this);
+        node.condition->accept(*this);
+        node.stepFn->accept(*this);
+    }
+
+    void BorrowChecker::visit(AutoIterateExpr &node)
+    {
+        node.start->accept(*this);
+        node.limit->accept(*this);
+    }
+
+    void BorrowChecker::visit(IterateStepExpr &node)
+    {
+        node.start->accept(*this);
+        node.stepFn->accept(*this);
+        node.condition->accept(*this);
+    }
+
     void BorrowChecker::visit(ArrayExpr &node)
     {
         for (auto &elem : node.elements)

@@ -152,7 +152,14 @@ namespace lpp
                 tokens.push_back(makeToken(TokenType::AT, "@"));
                 break;
             case '~':
-                tokens.push_back(makeToken(TokenType::TILDE, "~"));
+                if (match('>'))
+                {
+                    tokens.push_back(makeToken(TokenType::TILDE_GT, "~>"));
+                }
+                else
+                {
+                    tokens.push_back(makeToken(TokenType::TILDE, "~"));
+                }
                 break;
             case '\\':
                 tokens.push_back(makeToken(TokenType::BACKSLASH, "\\"));
@@ -251,7 +258,23 @@ namespace lpp
                 }
                 break;
             case '!':
-                if (match('='))
+                if (match('!'))
+                {
+                    // !! operator variants
+                    if (match('<'))
+                    {
+                        tokens.push_back(makeToken(TokenType::BANG_BANG_LESS, "!!<"));
+                    }
+                    else if (match('>'))
+                    {
+                        tokens.push_back(makeToken(TokenType::BANG_BANG_GREATER, "!!>"));
+                    }
+                    else
+                    {
+                        tokens.push_back(makeToken(TokenType::BANG_BANG, "!!"));
+                    }
+                }
+                else if (match('='))
                 {
                     if (match('='))
                     {
