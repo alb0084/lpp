@@ -1,4 +1,4 @@
-# LPP â€” Light Programming Language
+# L++ â€” Light Programming Language
 
 <div align="center">
 
@@ -12,14 +12,32 @@
 
 ## âœ¨ Features
 
-- í´’ **Memory Safety** â€” Clang-inspired static analysis with CFG and data-flow tracking
-- âš¡ **High Performance** â€” Transpiles to optimized C++
-- í¾¯ **Modern Syntax** â€” Clean, expressive, Rust/JS-inspired
-- í»¡ï¸ **Static Analysis** â€” Path-sensitive analysis detects bugs before compilation
-- í´§ **VS Code Integration** â€” Syntax highlighting + real-time errors
-- í³¦ **ES6+ Constructs** â€” Arrow functions, destructuring, spread, and more
+### Language Features
+- ğŸ¯ **Modern Syntax** â€” Rust/JS-inspired (arrow functions, destructuring, spread)
+- ğŸ“¦ **ES6+ Support** â€” Optional chaining (`?.`), nullish coalescing (`??`), template literals
+- ğŸ”§ **Pattern Matching** â€” `match` expressions with guards
+- ğŸ§© **ADTs** â€” Algebraic data types and type unions
+- ğŸ¨ **Higher-Order Functions** â€” Map, filter, compose, pipeline operator
+- ğŸ”— **Interfaces & Traits** â€” Protocol-oriented programming
+- ğŸ“ **List Comprehensions** â€” Python-style syntax
+- âš¡ **Lambda Expressions** â€” Closures with capture
 
-## í³ Project Structure
+### Static Analysis
+- ğŸ›¡ï¸ **Path-Sensitive Analysis** â€” CFG + data-flow tracking
+- ğŸ” **Division by Zero** â€” Compile-time detection
+- âš ï¸ **Uninitialized Variables** â€” Catch bugs before runtime
+- ğŸ’€ **Dead Code Detection** â€” Find unreachable code
+- ğŸš« **Null Dereference** â€” Safety checks
+- ğŸ’§ **Memory Leak Detection** â€” Track allocations
+- ğŸ”¢ **Integer Overflow** â€” Warnings for potential overflows
+
+### Developer Experience
+- ğŸ”§ **VS Code Extension** â€” Syntax highlighting + real-time errors
+- ğŸ“– **Problem Matcher** â€” Errors shown directly in editor
+- ğŸš€ **Fast Compilation** â€” Transpiles to C++ then native code
+- âš¡ **High Performance** â€” Optimized C++ output
+
+## ï¿½ï¿½ï¿½ Project Structure
 
 ```
 lpp/
@@ -32,7 +50,7 @@ lpp/
 â””â”€â”€ README.md
 ```
 
-## íº€ Quick Start
+## ï¿½ï¿½ï¿½ Quick Start
 
 ### Installation
 
@@ -67,7 +85,7 @@ lppc hello.lpp
 ./hello
 ```
 
-## í³– Language Overview
+## ï¿½ï¿½ï¿½ Language Overview
 
 ### Variables & Types
 
@@ -118,7 +136,7 @@ let city = user?.address?.city;       // optional chaining
 let username = user?.name ?? "Anon";  // null coalescing
 ```
 
-## í»¡ï¸ Static Analysis
+## ï¿½ï¿½ï¿½ï¸ Static Analysis
 
 LPP includes a built-in analyzer that catches issues before compilation:
 
@@ -145,7 +163,7 @@ fn example() -> int {
 - âœ… Memory leak detection
 - âœ… Integer overflow warnings
 
-## í¿—ï¸ Architecture
+## ï¿½ï¿½ï¿½ï¸ Architecture
 
 LPP uses a multi-stage pipeline:
 
@@ -167,7 +185,7 @@ Executable
 
 Details in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## í³š Documentation
+## ï¿½ï¿½ï¿½ Documentation
 
 - **[Quick Start](docs/QUICKSTART.md)**
 - **[Language Specification](docs/FULL_SPEC.md)**
@@ -176,14 +194,14 @@ Details in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **[ES6+ Features](docs/ES6_FEATURES.md)**
 - **[Roadmap](docs/ROADMAP.md)**
 
-## í¾¯ Use Cases
+## ï¿½ï¿½ï¿½ Use Cases
 
 - **Systems Programming** â€” Low-level performance, modern syntax
 - **Learning** â€” Great introduction to compilers and type systems
 - **Rapid Prototyping** â€” Fast C++ generation without memory headaches
 - **Embedded Development** â€” Efficient binaries for constrained devices
 
-## í´ Contributing
+## ï¿½ï¿½ï¿½ Contributing
 
 1. Fork repository
 2. Create feature branch
@@ -191,7 +209,7 @@ Details in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 4. Push branch
 5. Open Pull Request
 
-## í³ Examples
+## ï¿½ï¿½ï¿½ Examples
 
 See the [examples/](examples/) directory:
 
@@ -200,15 +218,15 @@ See the [examples/](examples/) directory:
 - [advanced_features.lpp](examples/advanced_features.lpp)
 - [test_complete_es6.lpp](examples/test_complete_es6.lpp)
 
-## í´— Related Projects
+## ï¿½ï¿½ï¿½ Related Projects
 
 - **[LightJS](https://github.com/alb0084/lightjs)** â€” The original runtime that inspired LPP
 
-## í³„ License
+## ï¿½ï¿½ï¿½ License
 
 MIT License â€” see [LICENSE](LICENSE).
 
-## í¹ Acknowledgments
+## ï¿½ï¿½ï¿½ Acknowledgments
 
 - **Clang Static Analyzer** for CFG-based analysis approach
 - **JavaScript/TypeScript** for syntax inspiration
@@ -220,6 +238,6 @@ MIT License â€” see [LICENSE](LICENSE).
 
 **Built with â¤ï¸ for modern systems programming**
 
-[â­ Star on GitHub](https://github.com/alb0084/lpp) â€¢ [í°› Report Bug](https://github.com/alb0084/lpp/issues) â€¢ [í²¡ Request Feature](https://github.com/alb0084/lpp/issues)
+[â­ Star on GitHub](https://github.com/alb0084/lpp) â€¢ [ï¿½ï¿½ï¿½ Report Bug](https://github.com/alb0084/lpp/issues) â€¢ [ï¿½ï¿½ï¿½ Request Feature](https://github.com/alb0084/lpp/issues)
 
 </div>
