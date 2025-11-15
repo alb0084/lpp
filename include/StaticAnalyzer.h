@@ -44,7 +44,13 @@ namespace lpp
         // Type issues
         INTEGER_OVERFLOW,
         NARROWING_CONVERSION,
-        SIGN_CONVERSION
+        SIGN_CONVERSION,
+
+        // Paradigm violations
+        PARADIGM_MUTATION_IN_FUNCTIONAL,
+        PARADIGM_CLASS_IN_FUNCTIONAL,
+        PARADIGM_CLASS_IN_IMPERATIVE,
+        PARADIGM_GOLF_DISCOURAGED
     };
 
     // Analysis issue
@@ -168,6 +174,9 @@ namespace lpp
         void visit(Assignment &node) override;
         void visit(IfStmt &node) override;
         void visit(WhileStmt &node) override;
+        void visit(SwitchStmt &node) override;
+        void visit(BreakStmt &node) override;
+        void visit(ContinueStmt &node) override;
         void visit(ReturnStmt &node) override;
         void visit(ExprStmt &node) override;
 
@@ -181,6 +190,11 @@ namespace lpp
         std::vector<AnalysisIssue> issues;
         int currentLine = 0;
         std::string currentFunction = "";
+        ParadigmMode currentParadigm = ParadigmMode::NONE;
+
+        // Context tracking for break/continue validation
+        int loopDepth = 0;
+        int switchDepth = 0;
 
         // Control Flow Graph
         std::vector<std::unique_ptr<CFGNode>> cfg;
@@ -236,6 +250,14 @@ namespace lpp
         void reportIssue(IssueType type, Severity severity,
                          const std::string &message,
                          const std::vector<std::string> &notes = {});
+
+        // Paradigm validation
+        void checkParadigmViolation(VarDecl &node);
+        void checkParadigmViolation(Assignment &node);
+        void checkParadigmViolation(ClassDecl &node);
+        void checkParadigmViolation(MapExpr &node);
+        void checkParadigmViolation(FilterExpr &node);
+        void checkParadigmViolation(ReduceExpr &node);
     };
 
 } // namespace lpp

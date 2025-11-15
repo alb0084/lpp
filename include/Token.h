@@ -128,7 +128,8 @@ namespace lpp
         SEMICOLON,
         COMMA,
         COLON,
-        ARROW, // ->
+        ARROW,     // -> (return type, lambda with type inference)
+        FAT_ARROW, // => (lambda shorthand, always infers types)
         DOT,
         DOT_DOT,           // .. (range)
         DOT_DOT_DOT,       // ... (spread/rest)
@@ -142,6 +143,9 @@ namespace lpp
         BANG_BANG,         // !! (iterate-while)
         BANG_BANG_LESS,    // !!< (auto-increment until)
         BANG_BANG_GREATER, // !!> (auto-decrement until)
+
+        // Pragmas
+        PRAGMA, // #pragma
 
         // Special
         END_OF_FILE,

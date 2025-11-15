@@ -124,6 +124,7 @@ namespace lpp
         {TokenType::COMMA, "COMMA"},
         {TokenType::COLON, "COLON"},
         {TokenType::ARROW, "ARROW"},
+        {TokenType::FAT_ARROW, "FAT_ARROW"},
         {TokenType::DOT, "DOT"},
         {TokenType::DOT_DOT, "DOT_DOT"},
         {TokenType::DOT_DOT_DOT, "DOT_DOT_DOT"},
@@ -137,6 +138,9 @@ namespace lpp
         {TokenType::BANG_BANG, "BANG_BANG"},
         {TokenType::BANG_BANG_LESS, "BANG_BANG_LESS"},
         {TokenType::BANG_BANG_GREATER, "BANG_BANG_GREATER"},
+
+        // Pragmas
+        {TokenType::PRAGMA, "PRAGMA"},
 
         // Special
         {TokenType::END_OF_FILE, "EOF"},

@@ -8,6 +8,16 @@
 namespace lpp
 {
 
+    // Paradigm modes for file-level enforcement
+    enum class ParadigmMode
+    {
+        HYBRID,     // Default: all features allowed
+        FUNCTIONAL, // Immutability, pure functions, no classes
+        IMPERATIVE, // Performance-oriented, explicit control flow
+        OOP,        // Object-oriented with classes and inheritance
+        NONE        // No pragma specified (error state)
+    };
+
     // Forward declarations
     class ASTVisitor;
 
@@ -383,6 +393,42 @@ namespace lpp
         void accept(ASTVisitor &visitor) override;
     };
 
+    class BreakStmt : public Statement
+    {
+    public:
+        BreakStmt() {}
+        void accept(ASTVisitor &visitor) override;
+    };
+
+    class ContinueStmt : public Statement
+    {
+    public:
+        ContinueStmt() {}
+        void accept(ASTVisitor &visitor) override;
+    };
+
+    // Switch case clause
+    struct CaseClause
+    {
+        std::unique_ptr<Expression> value; // nullptr for default case
+        std::vector<std::unique_ptr<Statement>> statements;
+        bool isDefault;
+
+        CaseClause(std::unique_ptr<Expression> val, std::vector<std::unique_ptr<Statement>> stmts, bool isDef = false)
+            : value(std::move(val)), statements(std::move(stmts)), isDefault(isDef) {}
+    };
+
+    class SwitchStmt : public Statement
+    {
+    public:
+        std::unique_ptr<Expression> condition;
+        std::vector<CaseClause> cases;
+
+        SwitchStmt(std::unique_ptr<Expression> cond, std::vector<CaseClause> cs)
+            : condition(std::move(cond)), cases(std::move(cs)) {}
+        void accept(ASTVisitor &visitor) override;
+    };
+
     class ReturnStmt : public Statement
     {
     public:
@@ -473,16 +519,18 @@ namespace lpp
     class Program : public ASTNode
     {
     public:
+        ParadigmMode paradigm;
         std::vector<std::unique_ptr<Function>> functions;
         std::vector<std::unique_ptr<ClassDecl>> classes;
         std::vector<std::unique_ptr<InterfaceDecl>> interfaces;
         std::vector<std::unique_ptr<TypeDecl>> types;
 
-        Program(std::vector<std::unique_ptr<Function>> funcs,
+        Program(ParadigmMode pm,
+                std::vector<std::unique_ptr<Function>> funcs,
                 std::vector<std::unique_ptr<ClassDecl>> cls = {},
                 std::vector<std::unique_ptr<InterfaceDecl>> intfs = {},
                 std::vector<std::unique_ptr<TypeDecl>> tps = {})
-            : functions(std::move(funcs)), classes(std::move(cls)),
+            : paradigm(pm), functions(std::move(funcs)), classes(std::move(cls)),
               interfaces(std::move(intfs)), types(std::move(tps)) {}
         void accept(ASTVisitor &visitor) override;
     };
@@ -523,6 +571,9 @@ namespace lpp
         virtual void visit(Assignment &node) = 0;
         virtual void visit(IfStmt &node) = 0;
         virtual void visit(WhileStmt &node) = 0;
+        virtual void visit(SwitchStmt &node) = 0;
+        virtual void visit(BreakStmt &node) = 0;
+        virtual void visit(ContinueStmt &node) = 0;
         virtual void visit(ReturnStmt &node) = 0;
         virtual void visit(ExprStmt &node) = 0;
 

@@ -17,6 +17,7 @@
 - 📦 **ES6+ Support** — Optional chaining (`?.`), nullish coalescing (`??`), template literals
 - ⚡ **Golf-Style Operators** — Symbolic functional programming (`~`, `@`, `?`, `\`)
 - 🔁 **Iterate-While** — Haskell-inspired sequence generation (`!!<`, `!!>`, `!! $`, `~>`)
+- 🎭 **Paradigm Enforcement** — Per-file paradigm declaration (`functional`, `oop`, `imperative`, `hybrid`)
 - 🔧 **Pattern Matching** — `match` expressions with guards
 - 🧩 **ADTs** — Algebraic data types and type unions
 - 🎨 **Higher-Order Functions** — Map, filter, compose, pipeline operator
@@ -26,6 +27,7 @@
 
 ### Static Analysis
 - 🛡️ **Path-Sensitive Analysis** — CFG + data-flow tracking
+- ✅ **Paradigm Validation** — Enforce functional purity, OOP, or imperative style
 - 🔍 **Division by Zero** — Compile-time detection
 - ⚠️ **Uninitialized Variables** — Catch bugs before runtime
 - 💀 **Dead Code Detection** — Find unreachable code

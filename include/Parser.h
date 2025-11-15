@@ -41,6 +41,7 @@ namespace lpp
         std::unique_ptr<Statement> varDeclaration();
         std::unique_ptr<Statement> ifStatement();
         std::unique_ptr<Statement> whileStatement();
+        std::unique_ptr<Statement> switchStatement();
         std::unique_ptr<Statement> returnStatement();
         std::unique_ptr<Statement> expressionStatement();
         std::vector<std::unique_ptr<Statement>> block();

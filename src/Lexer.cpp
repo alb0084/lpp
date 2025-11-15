@@ -31,7 +31,6 @@ namespace lpp
         {"in", TokenType::IN},
         {"of", TokenType::OF},
         {"match", TokenType::MATCH},
-        {"case", TokenType::CASE},
         {"class", TokenType::CLASS},
         {"constructor", TokenType::CONSTRUCTOR},
         {"extends", TokenType::EXTENDS},
@@ -64,7 +63,13 @@ namespace lpp
         {"bool", TokenType::TYPE_BOOL},
         {"void", TokenType::TYPE_VOID},
         {"any", TokenType::TYPE_ANY},
-        {"unknown", TokenType::TYPE_UNKNOWN}};
+        {"unknown", TokenType::TYPE_UNKNOWN},
+        {"pragma", TokenType::PRAGMA},
+        {"paradigm", TokenType::IDENTIFIER}, // parsed as identifier, context-sensitive
+        {"hybrid", TokenType::IDENTIFIER},
+        {"functional", TokenType::IDENTIFIER},
+        {"imperative", TokenType::IDENTIFIER},
+        {"oop", TokenType::IDENTIFIER}};
 
     Lexer::Lexer(const std::string &source) : source(source) {}
 
@@ -80,12 +85,24 @@ namespace lpp
 
             char c = peek();
 
+            // Handle preprocessor directives (pragmas)
+            if (c == '#')
+            {
+                tokens.push_back(pragma());
+                continue;
+            }
+
             // Skip comments
             if (c == '/' && current + 1 < source.length())
             {
                 if (source[current + 1] == '/')
                 {
                     skipComment();
+                    continue;
+                }
+                else if (source[current + 1] == '*')
+                {
+                    skipBlockComment();
                     continue;
                 }
             }
@@ -251,6 +268,10 @@ namespace lpp
                     {
                         tokens.push_back(makeToken(TokenType::EQUAL_EQUAL, "=="));
                     }
+                }
+                else if (match('>'))
+                {
+                    tokens.push_back(makeToken(TokenType::FAT_ARROW, "=>"));
                 }
                 else
                 {
@@ -466,6 +487,24 @@ namespace lpp
         }
     }
 
+    void Lexer::skipBlockComment()
+    {
+        // Skip /*
+        advance();
+        advance();
+
+        while (!isAtEnd())
+        {
+            if (peek() == '*' && current + 1 < source.length() && source[current + 1] == '/')
+            {
+                advance(); // skip *
+                advance(); // skip /
+                return;
+            }
+            advance();
+        }
+    }
+
     Token Lexer::makeToken(TokenType type, const std::string &lexeme)
     {
         return Token(type, lexeme, line, column - lexeme.length());
@@ -537,6 +576,28 @@ namespace lpp
     {
         auto it = keywords.find(text);
         return (it != keywords.end()) ? it->second : TokenType::IDENTIFIER;
+    }
+
+    Token Lexer::pragma()
+    {
+        int startCol = column;
+        advance(); // consume '#'
+
+        // Skip whitespace after #
+        while (!isAtEnd() && (peek() == ' ' || peek() == '\t'))
+        {
+            advance();
+        }
+
+        // Read the pragma directive (entire line)
+        size_t start = current;
+        while (!isAtEnd() && peek() != '\n')
+        {
+            advance();
+        }
+
+        std::string lexeme = source.substr(start, current - start);
+        return Token(TokenType::PRAGMA, lexeme, line, startCol);
     }
 
 } // namespace lpp
