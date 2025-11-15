@@ -9,6 +9,61 @@ namespace lpp
 
     std::unique_ptr<Program> Parser::parse()
     {
+        // First, check for paradigm pragma at the beginning
+        ParadigmMode paradigm = ParadigmMode::NONE;
+
+        if (check(TokenType::PRAGMA))
+        {
+            Token pragmaToken = advance();
+            std::string pragmaContent = pragmaToken.lexeme;
+
+            // Parse "pragma paradigm <mode>"
+            // Expected format: "pragma paradigm hybrid" (without the #)
+            size_t pragmaPos = pragmaContent.find("pragma");
+            if (pragmaPos != std::string::npos)
+            {
+                size_t paradigmPos = pragmaContent.find("paradigm", pragmaPos);
+                if (paradigmPos != std::string::npos)
+                {
+                    // Extract the mode after "paradigm"
+                    size_t modeStart = paradigmPos + 8; // length of "paradigm"
+                    while (modeStart < pragmaContent.length() && std::isspace(pragmaContent[modeStart]))
+                        modeStart++;
+
+                    size_t modeEnd = modeStart;
+                    while (modeEnd < pragmaContent.length() && std::isalnum(pragmaContent[modeEnd]))
+                        modeEnd++;
+
+                    std::string mode = pragmaContent.substr(modeStart, modeEnd - modeStart);
+
+                    if (mode == "hybrid")
+                        paradigm = ParadigmMode::HYBRID;
+                    else if (mode == "functional")
+                        paradigm = ParadigmMode::FUNCTIONAL;
+                    else if (mode == "imperative")
+                        paradigm = ParadigmMode::IMPERATIVE;
+                    else if (mode == "oop")
+                        paradigm = ParadigmMode::OOP;
+                    else
+                    {
+                        error("Invalid paradigm mode '" + mode + "'. Expected: hybrid, functional, imperative, or oop");
+                    }
+                }
+                else
+                {
+                    error("Expected 'paradigm' keyword in pragma directive");
+                }
+            }
+        }
+
+        // If no pragma found, error
+        if (paradigm == ParadigmMode::NONE)
+        {
+            error("Missing paradigm declaration. Add '#pragma paradigm <mode>' at the beginning of the file.\n"
+                  "Valid modes: hybrid (recommended), functional, imperative, oop");
+            paradigm = ParadigmMode::HYBRID; // Default fallback for error recovery
+        }
+
         std::vector<std::unique_ptr<Function>> functions;
         std::vector<std::unique_ptr<ClassDecl>> classes;
         std::vector<std::unique_ptr<InterfaceDecl>> interfaces;
@@ -39,7 +94,7 @@ namespace lpp
             }
         }
 
-        return std::make_unique<Program>(std::move(functions), std::move(classes), std::move(interfaces), std::move(types));
+        return std::make_unique<Program>(paradigm, std::move(functions), std::move(classes), std::move(interfaces), std::move(types));
     }
 
     Token Parser::peek() const
@@ -168,6 +223,18 @@ namespace lpp
             return ifStatement();
         if (match(TokenType::WHILE))
             return whileStatement();
+        if (match(TokenType::SWITCH))
+            return switchStatement();
+        if (match(TokenType::BREAK))
+        {
+            consume(TokenType::SEMICOLON, "Expected ';' after 'break'");
+            return std::make_unique<BreakStmt>();
+        }
+        if (match(TokenType::CONTINUE))
+        {
+            consume(TokenType::SEMICOLON, "Expected ';' after 'continue'");
+            return std::make_unique<ContinueStmt>();
+        }
         if (match(TokenType::RETURN))
             return returnStatement();
 
@@ -262,6 +329,54 @@ namespace lpp
         return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
     }
 
+    std::unique_ptr<Statement> Parser::switchStatement()
+    {
+        consume(TokenType::LPAREN, "Expected '(' after 'switch'");
+        auto condition = expression();
+        consume(TokenType::RPAREN, "Expected ')' after switch condition");
+        consume(TokenType::LBRACE, "Expected '{' after switch condition");
+
+        std::vector<CaseClause> cases;
+
+        while (!check(TokenType::RBRACE) && !isAtEnd())
+        {
+            if (match(TokenType::CASE))
+            {
+                auto caseValue = expression();
+                consume(TokenType::COLON, "Expected ':' after case value");
+
+                std::vector<std::unique_ptr<Statement>> caseStmts;
+                while (!check(TokenType::CASE) && !check(TokenType::DEFAULT) && !check(TokenType::RBRACE) && !isAtEnd())
+                {
+                    caseStmts.push_back(statement());
+                }
+
+                cases.emplace_back(std::move(caseValue), std::move(caseStmts), false);
+            }
+            else if (match(TokenType::DEFAULT))
+            {
+                consume(TokenType::COLON, "Expected ':' after 'default'");
+
+                std::vector<std::unique_ptr<Statement>> defaultStmts;
+                while (!check(TokenType::CASE) && !check(TokenType::DEFAULT) && !check(TokenType::RBRACE) && !isAtEnd())
+                {
+                    defaultStmts.push_back(statement());
+                }
+
+                cases.emplace_back(nullptr, std::move(defaultStmts), true);
+            }
+            else
+            {
+                error("Expected 'case' or 'default' in switch statement");
+                advance();
+            }
+        }
+
+        consume(TokenType::RBRACE, "Expected '}' after switch cases");
+
+        return std::make_unique<SwitchStmt>(std::move(condition), std::move(cases));
+    }
+
     std::unique_ptr<Statement> Parser::returnStatement()
     {
         std::unique_ptr<Expression> value = nullptr;
@@ -318,14 +433,14 @@ namespace lpp
             }
         }
 
-        // Check for lambda: x -> expr or (params) -> expr
+        // Check for lambda: x -> expr or x => expr or (params) -> expr or (params) => expr
         size_t saved = current;
         if (check(TokenType::IDENTIFIER))
         {
             advance(); // consume identifier
-            if (match(TokenType::ARROW))
+            if (match(TokenType::ARROW) || match(TokenType::FAT_ARROW))
             {
-                // Single param lambda
+                // Single param lambda with -> or =>
                 std::string paramName = tokens[saved].lexeme;
                 std::vector<std::pair<std::string, std::string>> params = {{paramName, ""}};
                 auto body = expression();
@@ -380,9 +495,9 @@ namespace lpp
                     }
                 } while (match(TokenType::COMMA));
 
-                if (match(TokenType::RPAREN) && match(TokenType::ARROW))
+                if (match(TokenType::RPAREN) && (match(TokenType::ARROW) || match(TokenType::FAT_ARROW)))
                 {
-                    // It's a lambda!
+                    // It's a lambda! Both -> and => are accepted
                     isLambda = true;
                     auto body = expression();
                     return std::make_unique<LambdaExpr>(std::move(params), std::move(body), "", hasRestParam, restParamName);

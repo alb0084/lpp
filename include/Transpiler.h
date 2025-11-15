@@ -43,6 +43,9 @@ namespace lpp
         void visit(Assignment &node) override;
         void visit(IfStmt &node) override;
         void visit(WhileStmt &node) override;
+        void visit(SwitchStmt &node) override;
+        void visit(BreakStmt &node) override;
+        void visit(ContinueStmt &node) override;
         void visit(ReturnStmt &node) override;
         void visit(ExprStmt &node) override;
 

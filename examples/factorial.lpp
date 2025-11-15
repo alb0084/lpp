@@ -1,3 +1,5 @@
+#pragma paradigm functional
+
 // Factorial calculation in LPP
 fn factorial(n: int) -> int {
     if (n <= 1) {

@@ -419,18 +419,27 @@ namespace lpp
 
     void StaticAnalyzer::visit(MapExpr &node)
     {
+        // Check paradigm violation
+        checkParadigmViolation(node);
+
         node.iterable->accept(*this);
         node.fn->accept(*this);
     }
 
     void StaticAnalyzer::visit(FilterExpr &node)
     {
+        // Check paradigm violation
+        checkParadigmViolation(node);
+
         node.iterable->accept(*this);
         node.predicate->accept(*this);
     }
 
     void StaticAnalyzer::visit(ReduceExpr &node)
     {
+        // Check paradigm violation
+        checkParadigmViolation(node);
+
         node.iterable->accept(*this);
         node.fn->accept(*this);
         if (node.initial)
@@ -510,6 +519,9 @@ namespace lpp
     {
         currentLine++;
 
+        // Check paradigm violation
+        checkParadigmViolation(node);
+
         SymbolicValue val;
         if (node.initializer)
         {
@@ -527,6 +539,9 @@ namespace lpp
     void StaticAnalyzer::visit(Assignment &node)
     {
         currentLine++;
+
+        // Check paradigm violation
+        checkParadigmViolation(node);
 
         node.value->accept(*this);
 
@@ -554,9 +569,56 @@ namespace lpp
     {
         node.condition->accept(*this);
 
+        loopDepth++;
         for (auto &stmt : node.body)
         {
             stmt->accept(*this);
+        }
+        loopDepth--;
+    }
+
+    void StaticAnalyzer::visit(SwitchStmt &node)
+    {
+        currentLine++;
+        node.condition->accept(*this);
+
+        switchDepth++;
+        for (const auto &caseClause : node.cases)
+        {
+            if (!caseClause.isDefault && caseClause.value)
+            {
+                caseClause.value->accept(*this);
+            }
+
+            for (auto &stmt : caseClause.statements)
+            {
+                stmt->accept(*this);
+            }
+        }
+        switchDepth--;
+    }
+
+    void StaticAnalyzer::visit(BreakStmt &node)
+    {
+        currentLine++;
+        // Validate that break is inside a loop or switch
+        if (loopDepth == 0 && switchDepth == 0)
+        {
+            reportIssue(IssueType::UNREACHABLE_CODE, Severity::ERROR,
+                        "'break' statement not within loop or switch",
+                        {"break can only be used inside loops (while, for) or switch statements"});
+        }
+    }
+
+    void StaticAnalyzer::visit(ContinueStmt &node)
+    {
+        currentLine++;
+        // Validate that continue is inside a loop (not switch)
+        if (loopDepth == 0)
+        {
+            reportIssue(IssueType::UNREACHABLE_CODE, Severity::ERROR,
+                        "'continue' statement not within loop",
+                        {"continue can only be used inside loops (while, for)"});
         }
     }
 
@@ -603,6 +665,9 @@ namespace lpp
 
     void StaticAnalyzer::visit(ClassDecl &node)
     {
+        // Check paradigm violation
+        checkParadigmViolation(node);
+
         for (auto &method : node.methods)
         {
             method->accept(*this);
@@ -614,6 +679,9 @@ namespace lpp
 
     void StaticAnalyzer::visit(Program &node)
     {
+        // Store the paradigm for validation
+        currentParadigm = node.paradigm;
+
         for (auto &func : node.functions)
         {
             func->accept(*this);
@@ -622,6 +690,97 @@ namespace lpp
         for (auto &cls : node.classes)
         {
             cls->accept(*this);
+        }
+    }
+
+    // Paradigm validation methods
+    void StaticAnalyzer::checkParadigmViolation(VarDecl &node)
+    {
+        // FUNCTIONAL paradigm: disallow mutable variables
+        if (currentParadigm == ParadigmMode::FUNCTIONAL)
+        {
+            // Check if type contains "mut" (e.g., "mut int", "let mut x")
+            if (node.type.find("mut") != std::string::npos)
+            {
+                reportIssue(
+                    IssueType::PARADIGM_MUTATION_IN_FUNCTIONAL,
+                    Severity::ERROR,
+                    "Mutable variables are not allowed in 'functional' paradigm. Use 'let' or 'const' instead.",
+                    {"Functional paradigm enforces immutability for predictable behavior."});
+            }
+        }
+    }
+
+    void StaticAnalyzer::checkParadigmViolation(Assignment &node)
+    {
+        // FUNCTIONAL paradigm: disallow reassignment
+        if (currentParadigm == ParadigmMode::FUNCTIONAL)
+        {
+            reportIssue(
+                IssueType::PARADIGM_MUTATION_IN_FUNCTIONAL,
+                Severity::ERROR,
+                "Variable reassignment is not allowed in 'functional' paradigm.",
+                {"Consider using immutable transformations with operators like @, ?, \\"});
+        }
+    }
+
+    void StaticAnalyzer::checkParadigmViolation(ClassDecl &node)
+    {
+        // FUNCTIONAL paradigm: no classes
+        if (currentParadigm == ParadigmMode::FUNCTIONAL)
+        {
+            reportIssue(
+                IssueType::PARADIGM_CLASS_IN_FUNCTIONAL,
+                Severity::ERROR,
+                "Classes are not allowed in 'functional' paradigm. Use functions and data structures.",
+                {"Consider using records/types or switching to 'oop' or 'hybrid' paradigm."});
+        }
+
+        // IMPERATIVE paradigm: no classes
+        if (currentParadigm == ParadigmMode::IMPERATIVE)
+        {
+            reportIssue(
+                IssueType::PARADIGM_CLASS_IN_IMPERATIVE,
+                Severity::ERROR,
+                "Classes are not allowed in 'imperative' paradigm. Use functions and structs.",
+                {"For OOP features, use 'oop' or 'hybrid' paradigm."});
+        }
+    }
+
+    void StaticAnalyzer::checkParadigmViolation(MapExpr &node)
+    {
+        // IMPERATIVE paradigm: golf operators discouraged (warning only)
+        if (currentParadigm == ParadigmMode::IMPERATIVE)
+        {
+            reportIssue(
+                IssueType::PARADIGM_GOLF_DISCOURAGED,
+                Severity::WARNING,
+                "Golf-style operator '@' is discouraged in 'imperative' paradigm. Consider explicit loops.",
+                {"Imperative paradigm favors explicit control flow for clarity."});
+        }
+    }
+
+    void StaticAnalyzer::checkParadigmViolation(FilterExpr &node)
+    {
+        if (currentParadigm == ParadigmMode::IMPERATIVE)
+        {
+            reportIssue(
+                IssueType::PARADIGM_GOLF_DISCOURAGED,
+                Severity::WARNING,
+                "Golf-style operator '?' is discouraged in 'imperative' paradigm. Consider explicit loops.",
+                {"Imperative paradigm favors explicit control flow for clarity."});
+        }
+    }
+
+    void StaticAnalyzer::checkParadigmViolation(ReduceExpr &node)
+    {
+        if (currentParadigm == ParadigmMode::IMPERATIVE)
+        {
+            reportIssue(
+                IssueType::PARADIGM_GOLF_DISCOURAGED,
+                Severity::WARNING,
+                "Golf-style operator '\\\\' is discouraged in 'imperative' paradigm. Consider explicit loops.",
+                {"Imperative paradigm favors explicit control flow for clarity."});
         }
     }
 

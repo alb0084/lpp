@@ -35,6 +35,9 @@ namespace lpp
     void Assignment::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void IfStmt::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void WhileStmt::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+    void SwitchStmt::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+    void BreakStmt::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+    void ContinueStmt::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void ReturnStmt::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void ExprStmt::accept(ASTVisitor &visitor) { visitor.visit(*this); }
 

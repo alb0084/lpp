@@ -611,6 +611,54 @@ namespace lpp
         output << "}\n";
     }
 
+    void Transpiler::visit(SwitchStmt &node)
+    {
+        indent();
+        output << "switch (";
+        node.condition->accept(*this);
+        output << ") {\n";
+
+        indentLevel++;
+        for (const auto &caseClause : node.cases)
+        {
+            if (caseClause.isDefault)
+            {
+                indent();
+                output << "default:\n";
+            }
+            else
+            {
+                indent();
+                output << "case ";
+                caseClause.value->accept(*this);
+                output << ":\n";
+            }
+
+            indentLevel++;
+            for (auto &stmt : caseClause.statements)
+            {
+                stmt->accept(*this);
+            }
+            indentLevel--;
+        }
+        indentLevel--;
+
+        indent();
+        output << "}\n";
+    }
+
+    void Transpiler::visit(BreakStmt &node)
+    {
+        indent();
+        output << "break;\n";
+    }
+
+    void Transpiler::visit(ContinueStmt &node)
+    {
+        indent();
+        output << "continue;\n";
+    }
+
     void Transpiler::visit(ReturnStmt &node)
     {
         indent();

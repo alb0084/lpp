@@ -1,3 +1,5 @@
+#pragma paradigm functional
+
 // Golf-Style Symbolic Operators Demo
 // Compact functional programming syntax
 

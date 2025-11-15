@@ -27,11 +27,13 @@ namespace lpp
 
         void skipWhitespace();
         void skipComment();
+        void skipBlockComment();
 
         Token makeToken(TokenType type, const std::string &lexeme);
         Token number();
         Token string();
         Token identifier();
+        Token pragma();
 
         TokenType identifierType(const std::string &text);
     };

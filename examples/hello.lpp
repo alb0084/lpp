@@ -1,3 +1,5 @@
+#pragma paradigm hybrid
+
 // Hello World example in LPP
 fn main() -> int {
     print("Hello, World!");
