@@ -1,4 +1,4 @@
-# Bug Fixes - L++ Compiler v0.1
+# Bug Fixes - L++ Compiler v0.8.13
 
 **Date:** 2025-11-16  
 **Total Critical Bugs Fixed:** 13  
