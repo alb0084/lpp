@@ -1,4 +1,4 @@
-# Quick Start Guide
+# Quick Start Guide v0.8.13
 
 ## Prerequisites
 
