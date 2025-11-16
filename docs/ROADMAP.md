@@ -1,4 +1,4 @@
-# LPP Development Roadmap
+# LPP Development Roadmap v0.8.13
 
 ## ✅ Fase 1: COMPLETATA - Foundation
 - ✅ Struttura progetto
