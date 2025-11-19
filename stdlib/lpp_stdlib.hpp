@@ -108,7 +108,7 @@ namespace lpp
                 // FIX BUG #201a: No empty check causes undefined behavior
                 if (data.empty())
                     throw std::runtime_error("dequeue from empty queue");
-                T item = std::move(const_cast<T&>(data.front())); // Move instead of copy
+                T item = std::move(const_cast<T &>(data.front())); // Move instead of copy
                 data.pop();
                 return item;
             }
