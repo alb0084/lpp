@@ -174,6 +174,11 @@ namespace lpp
         writeLine("// ================================================");
         writeLine("");
 
+        // Include LPP Standard Library
+        writeLine("#include \"../stdlib/lpp_stdlib.hpp\"");
+        writeLine("using namespace lpp::stdlib;");
+        writeLine("");
+
         // Helper function for print
         writeLine("void print(const std::string& s) {");
         indentLevel++;
@@ -262,20 +267,49 @@ namespace lpp
     void Transpiler::visit(TemplateLiteralExpr &node)
     {
         // Template literal: `Hello ${name}` => std::string("Hello ") + std::to_string(name)
-        // FIX BUG #133: Escape special characters in template string literals
-        // TODO: Before outputting node.strings[i], escape:
-        // - Backslashes: \ -> \\
-        // - Quotes: " -> \"
-        // - Newlines: actual \n -> \\n (literal backslash-n)
-        // - Tabs: actual \t -> \\t
-        // Current risk: Raw strings with \ or " break C++ string literals
+        // FIX BUG #317: Escape special characters to prevent code injection
+        auto escapeString = [](const std::string &str) -> std::string
+        {
+            std::string result;
+            result.reserve(str.size() * 2); // Preallocate for performance
+            for (char c : str)
+            {
+                switch (c)
+                {
+                case '\\':
+                    result += "\\\\";
+                    break;
+                case '"':
+                    result += "\\\"";
+                    break;
+                case '\n':
+                    result += "\\n";
+                    break;
+                case '\r':
+                    result += "\\r";
+                    break;
+                case '\t':
+                    result += "\\t";
+                    break;
+                case '\0':
+                    result += "\\0";
+                    break;
+                default:
+                    result += c;
+                    break;
+                }
+            }
+            return result;
+        };
+
         output << "(";
         for (size_t i = 0; i < node.strings.size(); i++)
         {
             if (i > 0)
                 output << " + ";
 
-            output << "std::string(\"" << node.strings[i] << "\")";
+            // SECURITY: Escape all special characters before embedding in C++ string
+            output << "std::string(\"" << escapeString(node.strings[i]) << "\")";
 
             if (i < node.interpolations.size())
             {
@@ -484,14 +518,7 @@ namespace lpp
 
     void Transpiler::visit(RangeExpr &node)
     {
-        // Generate IIFE that creates vector with range values
-        // FIX BUG #134: Validate step is non-zero to prevent infinite loops
-        // TODO: Add compile-time check if step is constant literal
-        // - If step == 0: Compile error "Range step cannot be zero"
-        // TODO: Add runtime assertion in generated code:
-        // - assert(__step != 0 && "Range step cannot be zero");
-        // - Or: if (__step == 0) throw std::invalid_argument("step == 0");
-        // WARNING: step == 0 causes infinite loop: i += 0 never changes
+        // BUG #319 fix: Add runtime validation for step != 0
         output << "([&]() { std::vector<int> __range; int __start = ";
         node.start->accept(*this);
         output << "; int __end = ";
@@ -505,7 +532,9 @@ namespace lpp
         {
             output << "1";
         }
-        output << "; if (__step > 0) { for (int i = __start; i <= __end; i += __step) __range.push_back(i); }";
+        // BUG #319 fix: Validate step != 0 to prevent infinite loop
+        output << "; if (__step == 0) throw std::invalid_argument(\"Range step cannot be zero\");";
+        output << " if (__step > 0) { for (int i = __start; i <= __end; i += __step) __range.push_back(i); }";
         output << " else { for (int i = __start; i >= __end; i += __step) __range.push_back(i); }";
         output << " return __range; })()";
     }
@@ -1165,28 +1194,19 @@ namespace lpp
         }
 
         // For async functions, wrap body in std::async
-        // FIX BUG #184: Async [&] capture causes data races on local variables
-        // TODO: Detect which variables are actually used in async body
-        // - Capture by value for primitives: [x, y] instead of [&]
-        // - Use shared_ptr for objects: [ptr = std::shared_ptr(obj)]
-        // - Warn on capture of local references in async context
-        // Example UNSAFE:
-        //   async fn foo() { let x = 42; return async { x }; } // x dangling
-        // Example SAFE:
-        //   async fn foo() { let x = 42; return async { [x]() { return x; } }; }
-        // FIX BUG #129: Async functions without await are pure overhead
-        // TODO: Static analysis to detect await expressions in function body
-        // - Track awaitCount during AST traversal
-        // - If awaitCount == 0: skip std::async wrapper (synchronous execution)
-        // - Warn: "Function marked async but contains no await calls"
-        // - Save thread pool resources and eliminate future overhead
-        // TODO: Add try-catch for exception propagation in futures
-        // TODO: Optimize out async if no await calls detected (static analysis)
-        // NOTE: [&] capture includes rest parameters from outer scope
+        // FIX BUG #315: Async [&] capture causes data races and dangling references
+        // SECURITY: Force copy capture [=] instead of reference capture [&]
+        // Prevents use-after-free when locals are destroyed before async completes
+        // Example UNSAFE (OLD): async fn foo() { let x = 42; return async { x }; }
+        //   → x destroyed when foo() returns, but async lambda still references it
+        // Example SAFE (NEW): Forces [=] capture, x is copied into lambda
+        // NOTE: This may cause performance overhead for large captures
+        // TODO: Static analysis to warn about specific dangerous captures
         if (node.isAsync)
         {
             indent();
-            output << "return std::async(std::launch::async, [&]() {\n";
+            // Changed [&] to [=] to prevent dangling references
+            output << "return std::async(std::launch::async, [=]() {\n";
             indentLevel++;
         }
 
@@ -1257,6 +1277,13 @@ namespace lpp
         for (auto &cls : node.classes)
         {
             cls->accept(*this);
+            writeLine("");
+        }
+
+        // Molecules
+        for (auto &mol : node.molecules)
+        {
+            mol->accept(*this);
             writeLine("");
         }
 
@@ -1536,6 +1563,42 @@ namespace lpp
         }
         indentLevel--;
         writeLine(">;");
+        writeLine("");
+    }
+
+    void Transpiler::visit(MoleculeDecl &node)
+    {
+        // Generate Molecule instance: mol Graph { A - B; } -> Molecule<std::string> Graph;
+        writeLine("// Molecule: " + node.name);
+        writeLine("Molecule<std::string> " + node.name + ";");
+
+        // Add atoms
+        for (const auto &atom : node.atoms)
+        {
+            writeLine(node.name + ".addAtom(\"" + atom + "\");");
+        }
+
+        // Add bonds
+        for (const auto &bond : node.bonds)
+        {
+            std::string bondTypeStr;
+            switch (bond.type)
+            {
+            case BondType::SINGLE:
+                bondTypeStr = "BondType::SINGLE";
+                break;
+            case BondType::DOUBLE:
+                bondTypeStr = "BondType::DOUBLE";
+                break;
+            case BondType::ARROW:
+                bondTypeStr = "BondType::ARROW";
+                break;
+            case BondType::BIDIRECTIONAL:
+                bondTypeStr = "BondType::BIDIRECTIONAL";
+                break;
+            }
+            writeLine(node.name + ".addBond(\"" + bond.from + "\", \"" + bond.to + "\", " + bondTypeStr + ");");
+        }
         writeLine("");
     }
 

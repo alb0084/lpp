@@ -1,0 +1,7 @@
+// Simple molecule test - just declarations
+
+mol Graph {
+    A - B;
+    B - C;
+    C - D;
+}

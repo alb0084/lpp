@@ -74,6 +74,7 @@ namespace lpp
         {"assert", TokenType::ASSERT},
         {"macro", TokenType::MACRO},
         {"extern", TokenType::EXTERN},
+        {"mol", TokenType::MOL},
         {"int", TokenType::TYPE_INT},
         {"float", TokenType::TYPE_FLOAT},
         {"string", TokenType::TYPE_STRING},
@@ -332,7 +333,15 @@ namespace lpp
             case '<':
                 if (match('-'))
                 {
-                    tokens.push_back(makeToken(TokenType::ARROW_LEFT, "<-"));
+                    // Check for <-> bidirectional arrow
+                    if (match('>'))
+                    {
+                        tokens.push_back(makeToken(TokenType::BIDIRECTIONAL_ARROW, "<->"));
+                    }
+                    else
+                    {
+                        tokens.push_back(makeToken(TokenType::ARROW_LEFT, "<-"));
+                    }
                 }
                 else if (match('<'))
                 {
@@ -562,8 +571,16 @@ namespace lpp
         advance(); // consume opening "
 
         std::string result;
+        const size_t MAX_STRING_LENGTH = 10240; // BUG #324 fix: 10KB limit
+
         while (!isAtEnd() && peek() != '"')
         {
+            // BUG #324 fix: Check string length limit
+            if (result.length() >= MAX_STRING_LENGTH)
+            {
+                return Token(TokenType::INVALID, "String literal exceeds maximum length (10KB)", line, startCol);
+            }
+
             if (peek() == '\\')
             {
                 advance(); // consume backslash
@@ -619,11 +636,21 @@ namespace lpp
 
     Token Lexer::identifier()
     {
+        // FIX BUG #325: Prevent memory exhaustion from extremely long identifiers
+        static constexpr size_t MAX_IDENTIFIER_LENGTH = 1024; // Reasonable limit for identifiers
+
         size_t start = current;
         int startCol = column;
 
         while (!isAtEnd() && (std::isalnum(peek()) || peek() == '_'))
         {
+            // Check length limit during parsing
+            if (current - start >= MAX_IDENTIFIER_LENGTH)
+            {
+                return Token(TokenType::INVALID,
+                             "Identifier exceeds maximum length (" + std::to_string(MAX_IDENTIFIER_LENGTH) + " characters)",
+                             line, startCol);
+            }
             advance();
         }
 

@@ -4,7 +4,7 @@
 
 **A statically-typed systems language with modern syntax that transpiles to C++**
 
-**🔧 DEVELOPMENT v0.8.15 - Thread Safety & Concurrency (184/200 bugs fixed - 92%) 🔧**
+**✅ STABLE v0.8.16 - Security Hardening & Memory Safety (51/66 bugs fixed - 77%) ✅**
 
 [Quick Start](docs/QUICKSTART.md) • [Language Spec](docs/LANGUAGE_SPEC.md) • [Advanced Features](docs/ADVANCED_FEATURES.md) • [Design Patterns](docs/DESIGN_PATTERNS.md) • [Examples](examples/)
 
@@ -60,9 +60,23 @@ autopattern Observer EventBus;
 - 🔍 **Division by Zero** — Compile-time detection
 - ⚠️ **Uninitialized Variables** — Catch bugs before runtime
 - 💀 **Dead Code Detection** — Find unreachable code
-- 🚫 **Null Dereference** — Safety checks
+- 🚫 **Null Dereference** — Safety checks (51/66 critical bugs fixed ✅)
 - 💧 **Memory Leak Detection** — Track allocations
 - 🔢 **Integer Overflow** — Warnings for potential overflows
+
+### Security & Safety (NEW in v0.8.16 🔒)
+- ✅ **Memory Safe Patterns** — Smart pointers in all design patterns
+- ✅ **Command Injection Prevention** — Path validation & shell escaping
+- ✅ **Bounds Checking** — 80+ array access validations
+- ✅ **NULL Safety** — nullptr checks after dynamic_cast
+- ✅ **Virtual Destructors** — Prevent undefined behavior
+- ✅ **Thread-Safe Singleton** — std::call_once implementation
+
+### Graph Algorithms (NEW in v0.8.16 📊)
+- 🔍 **Path Finding** — BFS-based path existence check
+- 🛤️ **Shortest Path** — Unweighted graph traversal
+- 🌐 **Connected Components** — Count graph components  
+- 🎨 **Bipartite Check** — 2-colorability detection
 
 ### Developer Experience
 - 🔧 **VS Code Extension** — Syntax highlighting + real-time errors

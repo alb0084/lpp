@@ -65,6 +65,7 @@ namespace lpp
     void ClassDecl::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void InterfaceDecl::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void TypeDecl::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+    void MoleculeDecl::accept(ASTVisitor &visitor) { visitor.visit(*this); }
     void Program::accept(ASTVisitor &visitor) { visitor.visit(*this); }
 
 } // namespace lpp

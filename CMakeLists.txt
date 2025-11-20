@@ -37,9 +37,9 @@ add_executable(lpprepl
     src/StaticAnalyzer.cpp
 )
 
-# Tests (optional, can be added later)
-# enable_testing()
-# add_subdirectory(tests)
+# Tests
+enable_testing()
+add_subdirectory(tests)
 
 # Install
 install(TARGETS lppc DESTINATION bin)

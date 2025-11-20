@@ -242,6 +242,7 @@ namespace lpp
         void visit(ClassDecl &node) override;
         void visit(InterfaceDecl &node) override;
         void visit(TypeDecl &node) override;
+        void visit(MoleculeDecl &node) override;
         void visit(Program &node) override;
 
     private:

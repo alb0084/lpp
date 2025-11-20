@@ -1,0 +1,22 @@
+// Test Molecule/Graph syntax
+
+mol SimpleGraph {
+    A - B;
+    B - C;
+    C - A;
+}
+
+mol DirectedGraph {
+    Start -> Middle;
+    Middle -> End;
+}
+
+mol MixedGraph {
+    Node1 - Node2;
+    Node2 = Node3;
+    Node3 -> Node4;
+}
+
+fn main() {
+    println("Molecule syntax test compiled successfully!");
+}

@@ -1,0 +1,5 @@
+// Debug: see if < - > are separate tokens
+
+mol Test {
+    A < - > B;
+}

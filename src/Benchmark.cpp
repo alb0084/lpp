@@ -74,15 +74,32 @@ namespace lpp
     {
         std::cout << "Running runtime benchmark: " << executable << "\n";
 
-        // Execute and measure time
+        // FIX BUG #334: Validate executable path before execution
+        auto isValidPath = [](const std::string &path)
+        {
+            return path.find("..") == std::string::npos &&
+                   path.find(';') == std::string::npos &&
+                   path.find('|') == std::string::npos &&
+                   path.find('&') == std::string::npos &&
+                   path.find('`') == std::string::npos &&
+                   path.find('$') == std::string::npos &&
+                   !path.empty();
+        };
+
+        if (!isValidPath(executable))
+        {
+            std::cerr << "Error: Invalid executable path\n";
+            return;
+        }
+
+        // Execute and measure time with proper quoting
         auto start = std::chrono::high_resolution_clock::now();
-        // Sanitize executable path
-        std::string sanitized = executable;
-        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(),
-                                       [](char c)
-                                       { return c == '&' || c == '|' || c == ';' || c == '`' || c == '$'; }),
-                        sanitized.end());
-        system(sanitized.c_str());
+#ifdef _WIN32
+        std::string command = "\"" + executable + "\"";
+#else
+        std::string command = "'" + executable + "'";
+#endif
+        system(command.c_str());
         auto end = std::chrono::high_resolution_clock::now();
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

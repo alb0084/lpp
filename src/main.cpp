@@ -237,19 +237,33 @@ int main(int argc, char *argv[])
 
     // Sanitize path to prevent command injection
     std::string sanitizedOutput = outputFile;
-    std::string sanitizedCpp = cppFile;
-    // Remove potentially dangerous characters
-    sanitizedOutput.erase(std::remove_if(sanitizedOutput.begin(), sanitizedOutput.end(),
-                                         [](char c)
-                                         { return c == '&' || c == '|' || c == ';' || c == '`' || c == '$'; }),
-                          sanitizedOutput.end());
-    sanitizedCpp.erase(std::remove_if(sanitizedCpp.begin(), sanitizedCpp.end(),
-                                      [](char c)
-                                      { return c == '&' || c == '|' || c == ';' || c == '`' || c == '$'; }),
-                       sanitizedCpp.end());
+    // FIX BUG #334: Use safer command execution instead of system()
+    // Validate file paths to prevent command injection
+    auto isValidPath = [](const std::string &path)
+    {
+        return path.find("..") == std::string::npos &&
+               path.find(';') == std::string::npos &&
+               path.find('|') == std::string::npos &&
+               path.find('&') == std::string::npos &&
+               path.find('`') == std::string::npos &&
+               path.find('$') == std::string::npos &&
+               !path.empty();
+    };
 
-    std::string safeCommand = "g++ " + sanitizedCpp + " -o " + sanitizedOutput + " -std=c++17";
-    int result = system(safeCommand.c_str());
+    if (!isValidPath(cppFile) || !isValidPath(outputFile))
+    {
+        std::cerr << "Error: Invalid file path detected\n";
+        return 1;
+    }
+
+    // Build command with proper quoting for Windows/Unix
+#ifdef _WIN32
+    std::string command = "g++ \"" + cppFile + "\" -o \"" + outputFile + "\" -std=c++17";
+#else
+    std::string command = "g++ '" + cppFile + "' -o '" + outputFile + "' -std=c++17";
+#endif
+
+    int result = system(command.c_str());
 
     if (result == 0)
     {

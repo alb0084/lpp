@@ -45,6 +45,8 @@ namespace lpp
     // Expressions
     class Expression : public ASTNode
     {
+    public:
+        virtual ~Expression() = default; // FIX BUG #342: Virtual destructor
     };
 
     class NumberExpr : public Expression
@@ -470,6 +472,8 @@ namespace lpp
     // Statements
     class Statement : public ASTNode
     {
+    public:
+        virtual ~Statement() = default; // FIX BUG #342: Virtual destructor
     };
 
     class VarDecl : public Statement
@@ -806,6 +810,40 @@ namespace lpp
         void accept(ASTVisitor &visitor) override;
     };
 
+    // Molecule/Graph declaration: mol Name { A - B; B = C; }
+    enum class BondType
+    {
+        SINGLE,       // -  (undirected edge)
+        DOUBLE,       // =  (strong connection)
+        ARROW,        // -> (directed edge)
+        BIDIRECTIONAL // <-> (two-way edge)
+    };
+
+    class Bond
+    {
+    public:
+        std::string from;
+        std::string to;
+        BondType type;
+
+        Bond(const std::string &f, const std::string &t, BondType bt)
+            : from(f), to(t), type(bt) {}
+    };
+
+    class MoleculeDecl : public ASTNode
+    {
+    public:
+        std::string name;
+        std::vector<std::string> atoms; // List of unique atoms/nodes
+        std::vector<Bond> bonds;        // List of connections
+
+        MoleculeDecl(const std::string &n,
+                     std::vector<std::string> ats,
+                     std::vector<Bond> bnds)
+            : name(n), atoms(std::move(ats)), bonds(std::move(bnds)) {}
+        void accept(ASTVisitor &visitor) override;
+    };
+
     class Program : public ASTNode
     {
     public:
@@ -817,6 +855,7 @@ namespace lpp
         std::vector<std::unique_ptr<InterfaceDecl>> interfaces;
         std::vector<std::unique_ptr<TypeDecl>> types;
         std::vector<std::unique_ptr<Statement>> enums;
+        std::vector<std::unique_ptr<MoleculeDecl>> molecules;
 
         Program(ParadigmMode pm,
                 std::vector<std::unique_ptr<Function>> funcs,
@@ -825,10 +864,12 @@ namespace lpp
                 std::vector<std::unique_ptr<TypeDecl>> tps = {},
                 std::vector<std::unique_ptr<Statement>> enms = {},
                 std::vector<std::unique_ptr<Statement>> imps = {},
-                std::vector<std::unique_ptr<Statement>> exps = {})
+                std::vector<std::unique_ptr<Statement>> exps = {},
+                std::vector<std::unique_ptr<MoleculeDecl>> mols = {})
             : paradigm(pm), imports(std::move(imps)), exports(std::move(exps)),
               functions(std::move(funcs)), classes(std::move(cls)),
-              interfaces(std::move(intfs)), types(std::move(tps)), enums(std::move(enms)) {}
+              interfaces(std::move(intfs)), types(std::move(tps)), enums(std::move(enms)),
+              molecules(std::move(mols)) {}
         void accept(ASTVisitor &visitor) override;
     };
 
@@ -897,6 +938,7 @@ namespace lpp
         virtual void visit(ClassDecl &node) = 0;
         virtual void visit(InterfaceDecl &node) = 0;
         virtual void visit(TypeDecl &node) = 0;
+        virtual void visit(MoleculeDecl &node) = 0;
         virtual void visit(Program &node) = 0;
     };
 

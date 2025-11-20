@@ -1,0 +1,68 @@
+// Validation test cases for Molecule syntax
+
+// TEST 1: Empty molecule (edge case)
+mol EmptyMol {
+}
+
+// TEST 2: Single atom, no bonds
+mol SingleAtom {
+    Alone - Alone;
+}
+
+// TEST 3: Self-loop
+mol SelfLoop {
+    A - A;
+}
+
+// TEST 4: Multiple bonds between same nodes
+mol MultiBond {
+    A - B;
+    A = B;
+    A -> B;
+}
+
+// TEST 5: Long names
+mol LongNames {
+    VeryLongNodeName1 - VeryLongNodeName2;
+    VeryLongNodeName2 -> VeryLongNodeName3;
+}
+
+// TEST 6: Numbers in names  
+mol WithNumbers {
+    Node1 - Node2;
+    Node2 -> Node3;
+}
+
+// TEST 7: Complex directed acyclic graph (DAG)
+mol DAG {
+    Input1 -> Process1;
+    Input2 -> Process1;
+    Process1 -> Process2;
+    Process2 -> Output;
+}
+
+// TEST 8: Bidirectional relationships
+mol Bidirectional {
+    Client - Server;
+    Server - Database;
+}
+
+// TEST 9: Hub and spoke
+mol HubSpoke {
+    Center - Spoke1;
+    Center - Spoke2;
+    Center - Spoke3;
+    Spoke1 -> Leaf1;
+    Spoke2 -> Leaf2;
+    Spoke3 -> Leaf3;
+}
+
+// TEST 10: Dense graph
+mol DenseGraph {
+    A - B;
+    A - C;
+    A - D;
+    B - C;
+    B - D;
+    C - D;
+}

@@ -91,6 +91,7 @@ namespace lpp
         // Macro System
         MACRO,  // Macro definition
         EXTERN, // FFI external declaration
+        MOL,    // Molecule/Graph declaration
 
         // Types
         TYPE_INT,
@@ -152,9 +153,10 @@ namespace lpp
         SEMICOLON,
         COMMA,
         COLON,
-        ARROW,      // -> (return type, lambda with type inference)
-        FAT_ARROW,  // => (lambda shorthand, implicit return)
-        ARROW_LEFT, // <- (alternative return syntax)
+        ARROW,               // -> (return type, lambda with type inference)
+        FAT_ARROW,           // => (lambda shorthand, implicit return)
+        ARROW_LEFT,          // <- (alternative return syntax)
+        BIDIRECTIONAL_ARROW, // <-> (bidirectional bond in molecules)
         DOT,
         DOT_DOT,           // .. (range)
         DOT_DOT_DOT,       // ... (spread/rest)

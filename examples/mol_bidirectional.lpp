@@ -1,0 +1,13 @@
+// Test bidirectional operator <->
+
+mol Network {
+    Client <-> Server;
+    Server <-> Database;
+}
+
+mol Mixed {
+    A - B;
+    B = C;
+    C -> D;
+    D <-> E;
+}
