@@ -1,0 +1,5 @@
+// Test invalid bond operator
+
+mol InvalidBond {
+    A + B;
+}

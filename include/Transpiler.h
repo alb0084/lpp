@@ -72,20 +72,16 @@ namespace lpp
         void visit(ClassDecl &node) override;
         void visit(InterfaceDecl &node) override;
         void visit(TypeDecl &node) override;
+        void visit(MoleculeDecl &node) override;
         void visit(Program &node) override;
 
     private:
-        // FIX BUG #180: lambdaCounter not thread-safe for parallel compilation
-        // TODO: Make lambdaCounter atomic or thread_local
-        // - Option 1: std::atomic<int> lambdaCounter = 0;
-        // - Option 2: thread_local int lambdaCounter = 0; (per-thread)
-        // - Impact: Parallel compilation of multiple files safe
-        // - Current risk: Race condition on lambdaCounter++ in multi-threaded builds
+        // BUG #314 fix: Use std::atomic for thread-safe counters
         std::ostringstream output;
         int indentLevel = 0;
-        int lambdaCounter = 0;  // Per generare nomi univoci per lambda
-        int matchCounter = 0;   // Per generare nomi univoci per match
-        int quantumCounter = 0; // Per generare variabili quantum helper
+        std::atomic<int> lambdaCounter{0};  // Thread-safe lambda counter
+        std::atomic<int> matchCounter{0};   // Thread-safe match counter
+        std::atomic<int> quantumCounter{0}; // Thread-safe quantum counter
 
         void indent();
         void writeLine(const std::string &line);

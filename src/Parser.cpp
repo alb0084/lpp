@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <set>
+#include <tuple>
 
 namespace lpp
 {
@@ -96,6 +97,7 @@ namespace lpp
         std::vector<std::unique_ptr<InterfaceDecl>> interfaces;
         std::vector<std::unique_ptr<TypeDecl>> types;
         std::vector<std::unique_ptr<Statement>> enums;
+        std::vector<std::unique_ptr<MoleculeDecl>> molecules;
         std::vector<std::unique_ptr<Statement>> imports;
         std::vector<std::unique_ptr<Statement>> exports;
 
@@ -157,9 +159,13 @@ namespace lpp
             {
                 enums.push_back(enumDeclaration());
             }
+            else if (check(TokenType::MOL))
+            {
+                molecules.push_back(moleculeDeclaration());
+            }
             else
             {
-                error("Expected function, class, interface, type, or enum declaration");
+                error("Expected function, class, interface, type, enum, or mol declaration");
                 synchronize();
             }
         }
@@ -177,11 +183,21 @@ namespace lpp
         //   }
         return std::make_unique<Program>(paradigm, std::move(functions), std::move(classes),
                                          std::move(interfaces), std::move(types), std::move(enums),
-                                         std::move(imports), std::move(exports));
+                                         std::move(imports), std::move(exports), std::move(molecules));
     }
 
     Token Parser::peek() const
     {
+        // BUG #301 fix: Add bounds check to prevent crash
+        if (current >= tokens.size())
+        {
+            Token eof;
+            eof.type = TokenType::END_OF_FILE;
+            eof.lexeme = "";
+            eof.line = 0;
+            eof.column = 0;
+            return eof;
+        }
         return tokens[current];
     }
 
@@ -200,6 +216,16 @@ namespace lpp
 
     Token Parser::previous() const
     {
+        // BUG #302 fix: Add bounds check to prevent underflow
+        if (current == 0 || tokens.empty())
+        {
+            Token eof;
+            eof.type = TokenType::END_OF_FILE;
+            eof.lexeme = "";
+            eof.line = 0;
+            eof.column = 0;
+            return eof;
+        }
         return tokens[current - 1];
     }
 
@@ -259,11 +285,12 @@ namespace lpp
         panicMode = false;
         advance();
 
-        // FIX BUG #84: Prevent infinite loop in synchronization
-        int maxAdvances = 1000;
+        // FIX BUG #84 & #303: Prevent infinite loop in synchronization
+        // Increased limit and added safety check for malformed input
+        static constexpr int MAX_SYNC_ADVANCES = 2000;
         int advances = 0;
 
-        while (!isAtEnd() && advances < maxAdvances)
+        while (!isAtEnd() && advances < MAX_SYNC_ADVANCES)
         {
             advances++;
             // FIX BUG #155: Synchronize stops at wrong token (nested structures)
@@ -303,7 +330,7 @@ namespace lpp
             advance();
         }
 
-        if (advances >= maxAdvances)
+        if (advances >= MAX_SYNC_ADVANCES)
         {
             error("Parser synchronization exceeded maximum token advances");
         }
@@ -639,6 +666,7 @@ namespace lpp
                 isArrayType = true;
 
                 // Check for fixed size: int[10]
+                // FIX BUG #306: Validate array size is a constant NUMBER, not an expression
                 if (check(TokenType::NUMBER))
                 {
                     Token sizeToken = advance();
@@ -646,12 +674,23 @@ namespace lpp
                     if (safeStod(sizeToken.lexeme, arraySizeDouble))
                     {
                         arraySize = static_cast<int>(arraySizeDouble);
+                        // Validate positive size
+                        if (arraySize <= 0)
+                        {
+                            error("Array size must be positive, got: " + std::to_string(arraySize));
+                            arraySize = 0;
+                        }
                     }
                     else
                     {
                         error("Invalid array size: " + sizeToken.lexeme);
                         arraySize = 0;
                     }
+                }
+                else if (!check(TokenType::RBRACKET))
+                {
+                    // FIX BUG #306: Reject variable expressions as array size
+                    error("Array size must be a compile-time constant number literal");
                 }
 
                 consume(TokenType::RBRACKET, "Expected ']' after array type");
@@ -664,11 +703,18 @@ namespace lpp
             }
 
             // Check for union types: int | string | bool
+            // FIX BUG #305: Limit union types to prevent combinatorial explosion
+            static constexpr size_t MAX_UNION_TYPES = 32;
             if (match(TokenType::PIPE))
             {
                 unionTypes.push_back(typeName);
                 do
                 {
+                    if (unionTypes.size() >= MAX_UNION_TYPES)
+                    {
+                        error("Union type exceeds maximum type count (" + std::to_string(MAX_UNION_TYPES) + ")");
+                        break;
+                    }
                     Token unionType = advance();
                     unionTypes.push_back(unionType.lexeme);
                 } while (match(TokenType::PIPE));
@@ -909,6 +955,14 @@ namespace lpp
 
     std::unique_ptr<Expression> Parser::expression()
     {
+        // FIX BUG #308: Prevent stack overflow on deeply nested expressions
+        if (++recursionDepth > MAX_RECURSION_DEPTH)
+        {
+            error("Expression too deeply nested (max depth: " + std::to_string(MAX_RECURSION_DEPTH) + ")");
+            --recursionDepth;
+            return nullptr;
+        }
+
         // Check for ternary if: ?cond -> a $ b
         if (match(TokenType::QUESTION))
         {
@@ -919,12 +973,14 @@ namespace lpp
             if (match(TokenType::DOLLAR))
             {
                 auto elseExpr = expression();
+                --recursionDepth;
                 return std::make_unique<TernaryIfExpr>(std::move(condition), std::move(thenExpr), std::move(elseExpr));
             }
             else
             {
                 // If unario: ?cond -> expr (senza else)
                 // Wrap in statement per ora, o genera ternary con nullptr
+                --recursionDepth;
                 return std::make_unique<TernaryIfExpr>(std::move(condition), std::move(thenExpr), nullptr);
             }
         }
@@ -940,6 +996,7 @@ namespace lpp
                 std::string paramName = tokens[saved].lexeme;
                 std::vector<std::pair<std::string, std::string>> params = {{paramName, ""}};
                 auto body = expression();
+                --recursionDepth;
                 return std::make_unique<LambdaExpr>(std::move(params), std::move(body));
             }
             else
@@ -996,6 +1053,7 @@ namespace lpp
                     // It's a lambda! Both -> and => are accepted
                     isLambda = true;
                     auto body = expression();
+                    --recursionDepth;
                     return std::make_unique<LambdaExpr>(std::move(params), std::move(body), "", hasRestParam, restParamName);
                 }
                 else
@@ -1019,9 +1077,11 @@ namespace lpp
                 stages.push_back(nullishCoalescing());
             } while (match(TokenType::PIPE_GT));
 
+            --recursionDepth;
             return std::make_unique<PipelineExpr>(std::move(expr), std::move(stages));
         }
 
+        --recursionDepth;
         return expr;
     }
 
@@ -1343,7 +1403,8 @@ namespace lpp
                         expr = std::make_unique<QuantumMethodCall>(varName, method, std::move(args));
                         continue;
                     }
-                }
+                } // End quantum check
+                // Close the if (identExpr) block
 
                 auto propExpr = std::make_unique<IdentifierExpr>(propName.lexeme);
                 expr = std::make_unique<IndexExpr>(std::move(expr), std::move(propExpr), true, false);
@@ -1408,7 +1469,13 @@ namespace lpp
                 if (isGenericCall)
                 {
                     // Parse function call with generic args
-                    std::string functionName = dynamic_cast<IdentifierExpr *>(expr.get())->name;
+                    auto *identExpr = dynamic_cast<IdentifierExpr *>(expr.get());
+                    if (!identExpr)
+                    {
+                        error("Expected identifier for generic function call");
+                        return expr;
+                    }
+                    std::string functionName = identExpr->name;
                     advance(); // consume '('
 
                     std::vector<std::unique_ptr<Expression>> arguments;
@@ -1438,23 +1505,27 @@ namespace lpp
                     break; // Exit the call() loop so comparison can parse < operator
                 }
             }
-            else if (check(TokenType::LPAREN) && dynamic_cast<IdentifierExpr *>(expr.get()))
+            else if (check(TokenType::LPAREN))
             {
-                // Function call
-                std::string functionName = dynamic_cast<IdentifierExpr *>(expr.get())->name;
-                advance(); // consume '('
-
-                std::vector<std::unique_ptr<Expression>> arguments;
-                if (!check(TokenType::RPAREN))
+                auto *identExpr = dynamic_cast<IdentifierExpr *>(expr.get());
+                if (identExpr)
                 {
-                    do
-                    {
-                        arguments.push_back(expression());
-                    } while (match(TokenType::COMMA));
-                }
+                    // Function call
+                    std::string functionName = identExpr->name;
+                    advance(); // consume '('
 
-                consume(TokenType::RPAREN, "Expected ')' after arguments");
-                expr = std::make_unique<CallExpr>(functionName, std::move(arguments));
+                    std::vector<std::unique_ptr<Expression>> arguments;
+                    if (!check(TokenType::RPAREN))
+                    {
+                        do
+                        {
+                            arguments.push_back(expression());
+                        } while (match(TokenType::COMMA));
+                    }
+
+                    consume(TokenType::RPAREN, "Expected ')' after arguments");
+                    expr = std::make_unique<CallExpr>(functionName, std::move(arguments));
+                }
             }
             else if (check(TokenType::PLUS_PLUS) || check(TokenType::MINUS_MINUS))
             {
@@ -2117,6 +2188,134 @@ namespace lpp
 
         consume(TokenType::RBRACE, "Expected '}' after enum values");
         return std::make_unique<EnumDecl>(name.lexeme, std::move(values));
+    }
+
+    // Molecule declaration: mol Name { A - B; B = C; }
+    std::unique_ptr<MoleculeDecl> Parser::moleculeDeclaration()
+    {
+        // FIX BUG #304: Prevent memory exhaustion from huge molecules
+        static constexpr size_t MAX_MOLECULE_ATOMS = 10000;
+
+        consume(TokenType::MOL, "Expected 'mol'");
+        Token name = consume(TokenType::IDENTIFIER, "Expected molecule name");
+        consume(TokenType::LBRACE, "Expected '{' after molecule name");
+
+        std::vector<std::string> atoms;
+        std::vector<Bond> bonds;
+        std::set<std::string> atomSet;                                    // Track unique atoms
+        std::set<std::tuple<std::string, std::string, BondType>> bondSet; // Detect duplicate bonds
+
+        // Parse bonds: A - B; or A = B; or A -> B; or A <-> B;
+        while (!check(TokenType::RBRACE) && !isAtEnd())
+        {
+            Token from = consume(TokenType::IDENTIFIER, "Expected atom name");
+
+            // Validate atom name is not empty
+            if (from.lexeme.empty())
+            {
+                error("Atom name cannot be empty");
+                synchronize();
+                continue;
+            }
+
+            // Determine bond type
+            BondType bondType;
+            bool validOperator = false;
+
+            if (match(TokenType::MINUS))
+            {
+                bondType = BondType::SINGLE;
+                validOperator = true;
+            }
+            else if (match(TokenType::EQUAL))
+            {
+                bondType = BondType::DOUBLE;
+                validOperator = true;
+            }
+            else if (match(TokenType::ARROW))
+            {
+                bondType = BondType::ARROW;
+                validOperator = true;
+            }
+            else if (match(TokenType::BIDIRECTIONAL_ARROW))
+            {
+                bondType = BondType::BIDIRECTIONAL;
+                validOperator = true;
+            }
+
+            if (!validOperator)
+            {
+                error("Expected valid bond operator (-, =, ->, or <->) after atom '" + from.lexeme + "'");
+                synchronize();
+                continue;
+            }
+
+            Token to = consume(TokenType::IDENTIFIER, "Expected atom name after bond operator");
+
+            // Validate target atom name
+            if (to.lexeme.empty())
+            {
+                error("Target atom name cannot be empty");
+                synchronize();
+                continue;
+            }
+
+            // Check for semicolon (STRICT requirement)
+            if (!check(TokenType::SEMICOLON))
+            {
+                error("Missing ';' after bond declaration '" + from.lexeme + " ... " + to.lexeme + "'");
+                synchronize();
+                continue;
+            }
+            advance(); // consume semicolon
+
+            // Validate: detect duplicate bonds
+            auto bondKey = std::make_tuple(from.lexeme, to.lexeme, bondType);
+            if (bondSet.find(bondKey) != bondSet.end())
+            {
+                error("Duplicate bond detected: '" + from.lexeme + "' to '" + to.lexeme + "' with same bond type");
+                continue; // Skip this bond but keep parsing
+            }
+            bondSet.insert(bondKey);
+
+            // Track atoms
+            if (atomSet.find(from.lexeme) == atomSet.end())
+            {
+                // FIX BUG #304: Check atom limit
+                if (atoms.size() >= MAX_MOLECULE_ATOMS)
+                {
+                    error("Molecule exceeds maximum atom count (" + std::to_string(MAX_MOLECULE_ATOMS) + ")");
+                    break;
+                }
+                atoms.push_back(from.lexeme);
+                atomSet.insert(from.lexeme);
+            }
+            if (atomSet.find(to.lexeme) == atomSet.end())
+            {
+                // FIX BUG #304: Check atom limit
+                if (atoms.size() >= MAX_MOLECULE_ATOMS)
+                {
+                    error("Molecule exceeds maximum atom count (" + std::to_string(MAX_MOLECULE_ATOMS) + ")");
+                    break;
+                }
+                atoms.push_back(to.lexeme);
+                atomSet.insert(to.lexeme);
+            }
+
+            // Create bond
+            bonds.push_back(Bond(from.lexeme, to.lexeme, bondType));
+        }
+
+        consume(TokenType::RBRACE, "Expected '}' after molecule body");
+
+        // Validation: warn if empty molecule
+        if (atoms.empty() && bonds.empty())
+        {
+            // This is valid but unusual - just a warning in future
+            // For now, allow it
+        }
+
+        return std::make_unique<MoleculeDecl>(name.lexeme, std::move(atoms), std::move(bonds));
     }
 
     // Import statement: import { foo, bar } from "module" or import "module"

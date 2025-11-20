@@ -1,0 +1,11 @@
+// Test error handling
+
+// This should parse and work
+mol Valid {
+    A - B;
+}
+
+// Test with missing semicolon (should error)
+mol MissingSemicolon {
+    A - B
+}

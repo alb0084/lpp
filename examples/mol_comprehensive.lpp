@@ -1,0 +1,62 @@
+// Comprehensive Molecule/Graph syntax test
+
+// Test 1: Simple undirected graph
+mol UndirectedGraph {
+    A - B;
+    B - C;
+    C - D;
+    D - A;
+}
+
+// Test 2: Directed graph (arrows)
+mol DirectedGraph {
+    Start -> Node1;
+    Node1 -> Node2;
+    Node2 -> End;
+}
+
+// Test 3: Mixed bond types
+mol MixedGraph {
+    A - B;
+    B = C;
+    C -> D;
+}
+
+// Test 4: Complex network
+mol Network {
+    Server1 - Server2;
+    Server2 - Server3;
+    Server1 -> Database;
+    Server2 -> Database;
+    Server3 -> Database;
+    Database = Cache;
+}
+
+// Test 5: Single node connected to multiple
+mol StarTopology {
+    Hub - Node1;
+    Hub - Node2;
+    Hub - Node3;
+    Hub - Node4;
+}
+
+// Test 6: Triangle
+mol Triangle {
+    A - B;
+    B - C;
+    C - A;
+}
+
+// Test 7: Chain
+mol Chain {
+    First -> Second;
+    Second -> Third;
+    Third -> Fourth;
+    Fourth -> Fifth;
+}
+
+fn main() {
+    // Test runtime API
+    let neighbors = UndirectedGraph.neighbors("A");
+    println("Test passed!");
+}

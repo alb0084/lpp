@@ -123,10 +123,23 @@ namespace lpp
         }
         else if (expr->op == "*")
         {
-            // FIX BUG #80: Check for multiplication overflow
-            if (leftVal != 0 && (result / leftVal) != rightVal)
+            // BUG #309 fix: Check for overflow BEFORE multiplication
+            if (leftVal != 0)
             {
-                return nullptr; // Potential overflow
+                // Check positive overflow
+                if (rightVal > 0 && leftVal > INT_MAX / rightVal)
+                    return nullptr;
+                // Check negative overflow
+                if (rightVal < 0 && leftVal < INT_MIN / rightVal)
+                    return nullptr;
+            }
+            if (rightVal != 0)
+            {
+                // Additional check for edge case
+                if (leftVal > 0 && rightVal < INT_MIN / leftVal)
+                    return nullptr;
+                if (leftVal < 0 && rightVal > 0 && leftVal < INT_MIN / rightVal)
+                    return nullptr;
             }
             result = leftVal * rightVal;
         }
@@ -134,9 +147,18 @@ namespace lpp
         {
             if (rightVal != 0)
             {
-                // Use double division to preserve precision
-                double resultDouble = static_cast<double>(leftVal) / static_cast<double>(rightVal);
-                result = resultDouble;
+                // FIX BUG #310: Return double result, not truncated int
+                // NOTE: This still uses int evaluation - full fix needs double support in evaluateConstant()
+                // For now, only fold if division is exact
+                if (leftVal % rightVal == 0)
+                {
+                    result = leftVal / rightVal;
+                }
+                else
+                {
+                    // Don't fold non-exact division to preserve precision
+                    return nullptr;
+                }
             }
             else
             {
@@ -196,6 +218,12 @@ namespace lpp
         if (auto boolean = dynamic_cast<BoolExpr *>(expr))
         {
             return boolean->value ? 1 : 0;
+        }
+        // FIX BUG #313: Handle StringExpr properly
+        if (auto str = dynamic_cast<StringExpr *>(expr))
+        {
+            // Return string length as integer value for optimization purposes
+            return static_cast<int>(str->value.length());
         }
         // FIX BUG #90: Warn about fallback
         // TODO: Add proper error reporting for unevaluable constants

@@ -42,6 +42,10 @@ namespace lpp
         std::string sourceCode;               // Original source for error context
         std::vector<std::string> sourceLines; // Split by line for easy access
 
+        // FIX BUG #308: Stack overflow protection
+        static constexpr size_t MAX_RECURSION_DEPTH = 500;
+        size_t recursionDepth = 0;
+
         // Helper to safely parse doubles with validation
         bool safeStod(const std::string &str, double &result)
         {
@@ -102,6 +106,7 @@ namespace lpp
         std::unique_ptr<ClassDecl> classDeclaration();
         std::unique_ptr<InterfaceDecl> interfaceDeclaration();
         std::unique_ptr<TypeDecl> typeDeclaration();
+        std::unique_ptr<MoleculeDecl> moleculeDeclaration();
         std::unique_ptr<ClassDecl> expandAutoPattern(std::unique_ptr<AutoPatternStmt> autoPattern);
 
         std::unique_ptr<Statement> statement();

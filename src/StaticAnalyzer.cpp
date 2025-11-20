@@ -1070,6 +1070,8 @@ namespace lpp
     void StaticAnalyzer::visit(InterfaceDecl &node) {}
     void StaticAnalyzer::visit(TypeDecl &node) {}
 
+    void StaticAnalyzer::visit(MoleculeDecl &node) {}
+
     void StaticAnalyzer::visit(Program &node)
     {
         // Store the paradigm for validation

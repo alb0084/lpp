@@ -1,37 +1,41 @@
-# L++ Documentation v0.8.13
+# L++ Documentation v0.8.16
 
 Complete documentation for the L++ programming language.
 
 ---
 
-## 📚 Getting Started
+## 📚 Quick Navigation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Get up and running in 5 minutes
-- **[LANGUAGE_SPEC.md](LANGUAGE_SPEC.md)** - Complete language specification
+### 🚀 Start Here
+1. **[QUICKSTART.md](QUICKSTART.md)** - Get up and running in 5 minutes
+2. **[FULL_SPEC.md](FULL_SPEC.md)** - Complete language specification
 
----
+### 💡 Features & Patterns
+- **[ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)** - Modern features (ES6+, golf, quantum, generators)
+- **[MOLECULE_FEATURE.md](MOLECULE_FEATURE.md)** - Molecular programming API
+- **[DESIGN_PATTERNS.md](DESIGN_PATTERNS.md)** - All 23 GoF patterns with @autopattern
+- **[PARADIGMS.md](PARADIGMS.md)** - Multi-paradigm guide (OOP, FP, Golf, Hybrid)
 
-## 🚀 Core Documentation
-
-### Language Features
-- **[FULL_SPEC.md](FULL_SPEC.md)** - Comprehensive technical specification
-- **[ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)** - Modern features (ES6+, golf operators, quantum, generators)
-- **[PARADIGMS.md](PARADIGMS.md)** - Multi-paradigm programming (Functional, OOP, Imperative, GOLFED, Hybrid)
-
-### Design Patterns
-- **[DESIGN_PATTERNS.md](DESIGN_PATTERNS.md)** - All 23 Gang of Four patterns with autopattern
-
-### Architecture
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Compiler architecture and design
-- **[STATIC_ANALYZER.md](STATIC_ANALYZER.md)** - Static analysis and CFG system
-
----
-
-## 📝 Development
-
-- **[BUG_FIXES.md](BUG_FIXES.md)** - Complete bug fix history (13 critical bugs resolved)
+### 🔧 Architecture & Tools
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Compiler internals (Lexer→Parser→AST→Transpiler)
+- **[STATIC_ANALYZER.md](STATIC_ANALYZER.md)** - Static analysis & CFG system
+- **[BUG_FIXES.md](BUG_FIXES.md)** - Bug fix history
 - **[ROADMAP.md](ROADMAP.md)** - Future development plans
-- **[CHANGELOG.md](../CHANGELOG.md)** - Version history and changes
+
+---
+
+## 📦 Deprecated Files (Content Merged)
+
+The following files have been consolidated into **[ALL_BUGS_COMPLETE.md](ALL_BUGS_COMPLETE.md)**:
+- ~~24_BUG_SUMMARY_IT.md~~ (31 stdlib bugs - now in ALL_BUGS section 1)
+- ~~25_NEW_CRITICAL_BUGS.md~~ (25 compiler bugs - now in ALL_BUGS sections 1-2)
+- ~~36_BUGS_FINAL_SUMMARY.md~~ (incomplete summary - superseded)
+- ~~STDLIB_BUG_FIXES_COMPLETE.md~~ (stdlib only - now part of complete report)
+- ~~BUG_FIXES_ITERATION_*.md~~ (historical iterations - archived)
+- ~~ITERATION_*_SUMMARY.md~~ (old summaries - archived)
+- ~~STDLIB_BUGS_COMPLETE_ANALYSIS.md~~ (duplicate - merged)
+- ~~CONCURRENCY_BUGS_FINAL.md~~ (subset - merged into ALL_BUGS)
+- ~~MOLECULE_VALIDATION_REPORT.md~~ (validation - in MOLECULE_FEATURE.md)
 
 ---
 
