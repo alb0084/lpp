@@ -44,7 +44,7 @@ RENUMBER_GUIDE.txt
 # Enterprise documentation (confidential)
 docs/ENTERPRISE_FEATURES.md
 
-release/
+releases/*
 
 .copilot-memory-OLD.md
 
