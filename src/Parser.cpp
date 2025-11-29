@@ -3628,12 +3628,23 @@ namespace lpp
 
     std::unique_ptr<Expression> Parser::parsePrecedence(int minPrecedence)
     {
+        // FIX BUG #300: Add recursion depth check to prevent stack overflow
+        if (++recursionDepth > MAX_RECURSION_DEPTH)
+        {
+            error("Expression too deeply nested (max depth: " + std::to_string(MAX_RECURSION_DEPTH) + ")");
+            --recursionDepth;
+            return nullptr;
+        }
+
         // Pratt parser with dynamic precedence from NotationContext
         // Start with primary (no recursion to expression())
         auto left = primary();
 
         if (!left)
+        {
+            --recursionDepth;
             return nullptr;
+        }
 
         while (!isAtEnd())
         {
@@ -3680,6 +3691,7 @@ namespace lpp
             if (!right)
             {
                 error("Expected expression after operator '" + opStr + "'");
+                --recursionDepth;
                 return left;
             }
 
@@ -3703,6 +3715,7 @@ namespace lpp
                     if (!stage)
                     {
                         error("Expected expression after '|>' in pipeline");
+                        --recursionDepth;
                         break;
                     }
                     stages.push_back(std::move(stage));
@@ -3723,6 +3736,7 @@ namespace lpp
             }
         }
 
+        --recursionDepth;
         return left;
     }
 
